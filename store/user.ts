@@ -1,4 +1,5 @@
 
+import * as React from 'react'
 import { randomId, randomName } from '@/util'
 
 interface User {
@@ -14,7 +15,7 @@ let user: User = {
 
 let callbacks: (() => any)[] = []
 
-export const subcribe = (callBack: () => any) => {
+const subcribe = (callBack: () => any) => {
   callbacks.push(callBack)
 
   const unSubscribe = () => {
@@ -24,7 +25,7 @@ export const subcribe = (callBack: () => any) => {
   return unSubscribe
 }
 
-export const getSnapshot = () => {
+const getSnapshot = () => {
   return user
 }
 
@@ -32,11 +33,13 @@ const handleStoreUpdate = () => {
   callbacks.forEach(callback => callback())
 }
 
-setInterval(() => {
-  user = {
-    ...user,
-    name: randomName()
+export const useUser = () => {
+  const result = React.useSyncExternalStore(subcribe, getSnapshot)
+
+  const setUser = (newUser: User) => {
+    user = newUser
+    handleStoreUpdate()
   }
 
-  handleStoreUpdate()
-}, 1000)
+  return [result, setUser] as [User, (arg: User) => void]
+}

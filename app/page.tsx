@@ -1,15 +1,25 @@
 'use client'
 import * as React from 'react'
-import * as UserStore from '@/store/user'
+import { useUser } from '@/store/user'
+import { randomName } from '@/util'
 
 const HomePage: React.FC = () => {
-  let user = React.useSyncExternalStore(UserStore.subcribe, UserStore.getSnapshot)
+  let [user, setUser] = useUser()
+
+  const handleUserNameChange = () => {
+    setUser({
+      ...user,
+      name: randomName()
+    })
+  }
 
   return (
     <div>
       <h1>User</h1>
       <p>ID: {user.id}</p>
       <p>Name: {user.name}</p>
+
+      <button onClick={() => handleUserNameChange()}>Change user name</button>
     </div>
   )
 }
