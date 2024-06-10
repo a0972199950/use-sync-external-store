@@ -8,52 +8,66 @@ interface User {
   [key: string]: any
 }
 
-let user: User
-
-let clientInitialized = false
-let serverInitialized = false
-
 declare global {
   interface Window {
-    __PRELOADED_STATE__: any
+    __PRELOADED_STATE__: User
   }
 }
 
-if (typeof window !== 'undefined' && !clientInitialized) {
-  console.log('初始化 client')
-  user = window.__PRELOADED_STATE__
-  clientInitialized = true
-} else if (!serverInitialized) {
-  console.log('初始化 server')
 
-  user = {
-    id: randomId(),
-    name: randomName(),
+class UserStore {
+  static _instance: UserStore
+  user: User
+
+  private constructor() {
+    this.user = {
+      id: 'this is an id',
+      name: 'John'
+    }
   }
 
-  serverInitialized = true
+  public static getInstance(): UserStore {
+    if (!UserStore._instance) {
+      UserStore._instance = new UserStore()
+    }
+
+    return UserStore._instance
+  }
+
+  public setValue(user: User) {
+    this.user = user
+  }
+
+  public getValue () {
+    return this.user
+  }
 }
 
-console.log('user id: ', user?.id, serverInitialized, clientInitialized)
+export const initialStore = UserStore.getInstance()
+const getServerSnapshot = () => {
+  return initialStore.user
+}
 
-let callbacks: (() => any)[] = []
+let clientStore: UserStore | null = null
+const getSnapshot = () => {
+  if (!clientStore) {
+    clientStore = UserStore.getInstance()
+    clientStore.setValue(window.__PRELOADED_STATE__)
+  }
+
+  return clientStore.user
+}
+
+const callbacks = new Set<() => any>()
 
 const subcribe = (callBack: () => any) => {
-  callbacks.push(callBack)
+  callbacks.add(callBack)
 
   const unSubscribe = () => {
-    callbacks = callbacks.filter(cb => cb !== callBack)
+    callbacks.delete(callBack)
   }
 
   return unSubscribe
-}
-
-const getSnapshot = () => {
-  return user
-}
-
-const getServerSnapshot = () => {
-  return user
 }
 
 const handleStoreUpdate = () => {
@@ -64,18 +78,9 @@ export const useUser = () => {
   const result = React.useSyncExternalStore(subcribe, getSnapshot, getServerSnapshot)
 
   const setUser = (newUser: User) => {
-    user = newUser
+    clientStore!.user = newUser
     handleStoreUpdate()
   }
 
   return [result, setUser] as [User, (arg: User) => void]
-}
-
-export const clientStoreInit = () => {
-  return React.createElement(
-    'script',
-    {
-      dangerouslySetInnerHTML: { __html: `window.__PRELOADED_STATE__ = ${JSON.stringify(user)}` }
-    }
-  )
 }
