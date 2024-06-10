@@ -13,13 +13,13 @@ let user: User = {
   name: randomName(),
 }
 
-let callbacks: (() => any)[] = []
+const callbacks = new Set<() => any>()
 
 const subcribe = (callBack: () => any) => {
-  callbacks.push(callBack)
+  callbacks.add(callBack)
 
   const unSubscribe = () => {
-    callbacks = callbacks.filter(cb => cb !== callBack)
+    callbacks.delete(callBack)
   }
 
   return unSubscribe
