@@ -44,11 +44,21 @@ class UserStore {
 }
 
 export const initialStore = UserStore.getInstance()
+let clientStore: UserStore | null = null
+
 const getServerSnapshot = () => {
-  return initialStore.user
+  if (typeof window === 'undefined') {
+    return initialStore.user
+  }
+  
+  if (!clientStore) {
+    clientStore = UserStore.getInstance()
+    clientStore.setValue(window.__PRELOADED_STATE__)
+  }
+
+  return clientStore.user
 }
 
-let clientStore: UserStore | null = null
 const getSnapshot = () => {
   if (!clientStore) {
     clientStore = UserStore.getInstance()
